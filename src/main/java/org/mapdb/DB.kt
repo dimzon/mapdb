@@ -1199,15 +1199,15 @@ open class DB(
         }
 
         override fun verify() {
-            maker.`%%%verify`()
+            maker.verifyInternal()
         }
 
         override fun open2(catalog: SortedMap<String, String>): NavigableSet<E> {
-            return maker.`%%%open2`(catalog).keys as NavigableSet<E>
+            return maker.open2Internal(catalog).keys as NavigableSet<E>
         }
 
         override fun create2(catalog: SortedMap<String, String>): NavigableSet<E> {
-            return maker.`%%%create2`(catalog).keys as NavigableSet<E>
+            return maker.create2Internal(catalog).keys as NavigableSet<E>
         }
 
         override val type = "TreeSet"
@@ -1320,15 +1320,15 @@ open class DB(
         }
 
         override fun verify() {
-            maker.`%%%verify`()
+            maker.verifyInternal()
         }
 
         override fun open2(catalog: SortedMap<String, String>): HTreeMap.KeySet<E> {
-            return maker.`%%%open2`(catalog).keys as HTreeMap.KeySet<E>
+            return maker.open2Internal(catalog).keys as HTreeMap.KeySet<E>
         }
 
         override fun create2(catalog: SortedMap<String, String>): HTreeMap.KeySet<E> {
-            return maker.`%%%create2`(catalog).keys as HTreeMap.KeySet<E>
+            return maker.create2Internal(catalog).keys as HTreeMap.KeySet<E>
         }
 
         override val type = "HashSet"
@@ -1411,10 +1411,9 @@ open class DB(
         abstract protected fun create2(catalog:SortedMap<String,String>):E
         abstract protected fun open2(catalog:SortedMap<String,String>):E
 
-        //TODO this is hack to make internal methods not accessible from Java. Remove once internal method names are obfuscated in bytecode
-        internal fun `%%%verify`(){verify()}
-        internal fun `%%%create2`(catalog:SortedMap<String,String>) = create2(catalog)
-        internal fun `%%%open2`(catalog:SortedMap<String,String>) = open2(catalog)
+        internal fun verifyInternal(){verify()}
+        internal fun create2Internal(catalog:SortedMap<String,String>) = create2(catalog)
+        internal fun open2Internal(catalog:SortedMap<String,String>) = open2(catalog)
 
         abstract protected val db:DB
         abstract protected val name:String

@@ -18,25 +18,16 @@
 package org.mapdb.volume;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.util.Objects;
-
-import static java.lang.invoke.MethodHandles.constant;
-import static java.lang.invoke.MethodHandles.dropArguments;
-import static java.lang.invoke.MethodHandles.filterReturnValue;
-import static java.lang.invoke.MethodHandles.guardWithTest;
-import static java.lang.invoke.MethodType.methodType;
 
 /**
  * sun.misc.Cleaner has moved in OpenJDK 9 and
  * sun.misc.Unsafe#invokeCleaner(ByteBuffer) is the replacement.
- * This class is a hack to use sun.misc.Cleaner in Java 8 and
- * use the replacement in Java 9+.
+ * Android compatible implementation: plain reflection only, no MethodHandles.
  * This implementation is based on Hadoop class
  * https://github.com/apache/hadoop/blob/5d084d7eca32cfa647a78ff6ed3c378659f5b186/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/util/CleanerUtil.java
  * Some adaptations have been done to handle the attachment() of the byte buffer (explained in Bug #776)
@@ -58,93 +49,86 @@ public final class CleanerUtil {
     public static final String UNMAP_NOT_SUPPORTED_REASON;
 
     public static boolean JAVA8_OR_LESS;
-    private static final MethodHandle CLEANER;
 
+    private static final Method INVOKE_CLEANER;
+    private static final Object THE_UNSAFE;
+    private static final Method BUFFER_CLEANER;
+    private static final Method CLEANER_CLEAN;
+    private static final Method BUFFER_ATTACHMENT;
 
     static {
-        Object hack = unmapHackImpl();
-        if (hack instanceof MethodHandle) {
-            CLEANER = (MethodHandle) unmapHackImpl();
+        Object[] hack = unmapHackImpl();
+
+        if (hack[0] != null) {
+            INVOKE_CLEANER = (Method) hack[0];
+            THE_UNSAFE = hack[1];
+            BUFFER_CLEANER = null;
+            CLEANER_CLEAN = null;
+            BUFFER_ATTACHMENT = null;
+            UNMAP_SUPPORTED = true;
+            UNMAP_NOT_SUPPORTED_REASON = null;
+        } else if (hack[2] != null) {
+            INVOKE_CLEANER = null;
+            THE_UNSAFE = null;
+            BUFFER_CLEANER = (Method) hack[2];
+            CLEANER_CLEAN = (Method) hack[3];
+            BUFFER_ATTACHMENT = (Method) hack[4];
+            JAVA8_OR_LESS = true;
             UNMAP_SUPPORTED = true;
             UNMAP_NOT_SUPPORTED_REASON = null;
         } else {
-            CLEANER = null;
+            INVOKE_CLEANER = null;
+            THE_UNSAFE = null;
+            BUFFER_CLEANER = null;
+            CLEANER_CLEAN = null;
+            BUFFER_ATTACHMENT = null;
             UNMAP_SUPPORTED = false;
-            UNMAP_NOT_SUPPORTED_REASON = hack.toString();
+            UNMAP_NOT_SUPPORTED_REASON = (String) hack[5];
         }
     }
 
-    private static Object unmapHackImpl() {
-        final MethodHandles.Lookup lookup = MethodHandles.lookup();
+    private static Object[] unmapHackImpl() {
+        Object[] result = new Object[6];
+
         try {
             try {
                 // *** sun.misc.Unsafe unmapping (Java 9+) ***
                 final Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-                // first check if Unsafe has the right method, otherwise we can
-                // give up without doing any security critical stuff:
-                final MethodHandle unmapper = lookup.findVirtual(unsafeClass,
-                        "invokeCleaner", methodType(void.class, ByteBuffer.class));
-                // fetch the unsafe instance and bind it to the virtual MH:
+                final Method invokeCleaner = unsafeClass.getMethod("invokeCleaner", ByteBuffer.class);
                 final Field f = unsafeClass.getDeclaredField("theUnsafe");
                 f.setAccessible(true);
                 final Object theUnsafe = f.get(null);
-                return unmapper.bindTo(theUnsafe);
+                result[0] = invokeCleaner;
+                result[1] = theUnsafe;
+                return result;
             } catch (SecurityException se) {
-                // rethrow to report errors correctly (we need to catch it here,
-                // as we also catch RuntimeException below!):
                 throw se;
             } catch (ReflectiveOperationException | RuntimeException e) {
-                // *** sun.misc.Cleaner unmapping (Java 8) ***
-                final Class<?> directBufferClass =
-                        Class.forName("java.nio.DirectByteBuffer");
-
-                final Method m = directBufferClass.getMethod("cleaner");
-                m.setAccessible(true);
-                final MethodHandle directBufferCleanerMethod = lookup.unreflect(m);
-                final Class<?> cleanerClass =
-                        directBufferCleanerMethod.type().returnType();
-
-                /*
-                 * "Compile" a MethodHandle that basically is equivalent
-                 * to the following code:
-                 *
-                 * void unmapper(ByteBuffer byteBuffer) {
-                 *   sun.misc.Cleaner cleaner =
-                 *       ((java.nio.DirectByteBuffer) byteBuffer).cleaner();
-                 *   if (Objects.nonNull(cleaner)) {
-                 *     cleaner.clean();
-                 *   } else {
-                 *     // the noop is needed because MethodHandles#guardWithTest
-                 *     // always needs ELSE
-                 *     noop(cleaner);
-                 *   }
-                 * }
-                 */
-                final MethodHandle cleanMethod = lookup.findVirtual(
-                        cleanerClass, "clean", methodType(void.class));
-                final MethodHandle nonNullTest = lookup.findStatic(Objects.class,
-                        "nonNull", methodType(boolean.class, Object.class))
-                        .asType(methodType(boolean.class, cleanerClass));
-                final MethodHandle noop = dropArguments(
-                        constant(Void.class, null).asType(methodType(void.class)),
-                        0, cleanerClass);
-                final MethodHandle unmapper = filterReturnValue(
-                        directBufferCleanerMethod,
-                        guardWithTest(nonNullTest, cleanMethod, noop))
-                        .asType(methodType(void.class, ByteBuffer.class));
-                JAVA8_OR_LESS = true;
-                return unmapper;
+                // *** sun.misc.Cleaner unmapping (Java 8 / Android) ***
+                final Class<?> directBufferClass = Class.forName("java.nio.DirectByteBuffer");
+                final Method cleanerMethod = directBufferClass.getMethod("cleaner");
+                cleanerMethod.setAccessible(true);
+                final Class<?> cleanerClass = cleanerMethod.getReturnType();
+                final Method cleanMethod = cleanerClass.getMethod("clean");
+                final Method attachmentMethod = directBufferClass.getMethod("attachment");
+                attachmentMethod.setAccessible(true);
+                result[2] = cleanerMethod;
+                result[3] = cleanMethod;
+                result[4] = attachmentMethod;
+                return result;
             }
         } catch (SecurityException se) {
-            return "Unmapping is not supported, because not all required " +
+            result[5] = "Unmapping is not supported, because not all required " +
                     "permissions are given to the MapDB JAR file: " + se +
                     " [Please grant at least the following permissions: " +
                     "RuntimePermission(\"accessClassInPackage.sun.misc\") " +
                     " and ReflectPermission(\"suppressAccessChecks\")]";
+            return result;
         } catch (ReflectiveOperationException | RuntimeException e) {
-            return "Unmapping is not supported on this platform, " +
+            result[5] = "Unmapping is not supported on this platform, " +
                     "because internal Java APIs are not compatible with " +
                     "this Hadoop version: " + e;
+            return result;
         }
     }
 
@@ -155,24 +139,34 @@ public final class CleanerUtil {
             }
 
             try {
-                CLEANER.invokeExact(buffer);
-                /*
-                * Handling attachment of the ByteBuffer object
-                * Refer to https://github.com/jankotek/mapdb/issues/776 for details
-                * */
-                if (JAVA8_OR_LESS) {
-                    final MethodHandles.Lookup lookup = MethodHandles.lookup();
-                    final Class<?> directBufferClass =
-                            Class.forName("java.nio.DirectByteBuffer");
-                    Object bb = directBufferClass.cast(buffer);
-                    final Method m = directBufferClass.getMethod("attachment");
-                    m.setAccessible(true);
-                    final MethodHandle directBufferAttachmentMethod = lookup.unreflect(m);
-                    Object attachment = (Object) directBufferAttachmentMethod.invoke(bb);
-                    if(attachment != null)
+                if (INVOKE_CLEANER != null) {
+                    INVOKE_CLEANER.invoke(THE_UNSAFE, buffer);
+                } else if (BUFFER_CLEANER != null) {
+                    Object cleaner = BUFFER_CLEANER.invoke(buffer);
+
+                    if (cleaner != null) {
+                        CLEANER_CLEAN.invoke(cleaner);
+                    }
+
+                    /*
+                    * Handling attachment of the ByteBuffer object
+                    * Refer to https://github.com/jankotek/mapdb/issues/776 for details
+                    * */
+                    Object attachment = BUFFER_ATTACHMENT.invoke(buffer);
+
+                    if (attachment != null) {
                         return freeBuffer((MappedByteBuffer) attachment);
+                    }
+                } else {
+                    throw new IOException("unmapping is not supported on this platform: " + UNMAP_NOT_SUPPORTED_REASON);
                 }
+
                 return true;
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                throw new IOException(cause);
+            } catch (IllegalAccessException e) {
+                throw new IOException(e);
             } catch (Throwable e) {
                 throw new IOException(e);
             }
