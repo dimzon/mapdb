@@ -222,8 +222,9 @@
                             <value>org.mapdb.JUnitRunListener</value>
                         </property>
                     </properties>
-                    <parallel>classesAndMethods</parallel>
-                    <threadCount>${threadCount}</threadCount>
+                    <!-- Parallel scheduler loses tasks on Windows (MNG-?; hangs in SharedThreadPoolStrategy.finished) -->
+                    <parallel>none</parallel>
+                    <threadCount>1</threadCount>
                     <perCoreThreadCount>false</perCoreThreadCount>
                     <argLine>${argline}</argLine>
 
