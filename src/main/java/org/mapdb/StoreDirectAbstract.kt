@@ -110,7 +110,7 @@ abstract class StoreDirectAbstract(
         if(headVol.getInt(20)!=calculateHeaderChecksum()) {
             val msg = "Header checksum broken. Store was not closed correctly and might be corrupted. Use `DBMaker.checksumHeaderBypass()` to recover your data. Use clean shutdown or enable transactions to protect the store in the future.";
             if(checksumHeaderBypass)
-                Utils.LOG.warning{msg}
+                Utils.LOG.warning(msg)
             else
                 throw DBException.DataCorruption(msg)
         }

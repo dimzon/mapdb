@@ -735,7 +735,7 @@ open class DB(
                         //removal, also remove from overflow map
                         val oldVal2 = expireOverflow.remove(key)
                         if (oldVal2 != null && !_valueSerializer.equals(oldVal as V, oldVal2 as V)) {
-                            Utils.LOG.warning { "Key also removed from overflow Map, but value in overflow Map differs" }
+                            Utils.LOG.warning("Key also removed from overflow Map, but value in overflow Map differs")
                         }
                     } else if (triggered && newVal == null) {
                         // triggered by eviction, put evicted entry into overflow map
