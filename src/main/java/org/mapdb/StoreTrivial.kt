@@ -9,7 +9,6 @@ import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
-import java.nio.file.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReadWriteLock
@@ -328,22 +327,19 @@ class StoreTrivialTx(val file:File, isThreadSafe:Boolean=true, val deleteFilesAf
         isThreadSafe = isThreadSafe
     ), StoreTx{
 
-    val path = file.toPath()
-
     companion object{
         internal val COMMIT_MARKER_SUFFIX = ".c";
         internal val DATA_SUFFIX = ".d";
     }
 
     private val fileChannel: FileChannel =
-                FileChannel.open(path, StandardOpenOption.READ,
-                        StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+                RandomAccessFile(file, "rw").getChannel()
 
     private val fileLock: FileLock =
                 try {
                     fileChannel.tryLock()
                 }catch(e: OverlappingFileLockException) {
-                    throw DBException.FileLocked(path!!, e)
+                    throw DBException.FileLocked(file, e)
                 }
 
     private var lastFileNum:Long = -1
@@ -356,7 +352,7 @@ class StoreTrivialTx(val file:File, isThreadSafe:Boolean=true, val deleteFilesAf
                 val header = buf.getLong(0)
                 fileHeaderCheck(header)
 
-                Utils.logDebug { "Opened file ${path}" }
+                Utils.logDebug { "Opened file ${file}" }
                 val lattest = findLattestCommitMarker()
                 lastFileNum = lattest ?: -1L;
                 if (lattest != null) {
@@ -373,17 +369,18 @@ class StoreTrivialTx(val file:File, isThreadSafe:Boolean=true, val deleteFilesAf
     }
     internal  fun findLattestCommitMarker():Long?{
         Utils.assertReadLock(lock)
-        if(null == path)
+        if(null == file)
             return null
 
         var highestCommitNumber = -1L;
 
-        val name = path.fileName!!.toString()
+        val name = file.name
 
-        for(child in Files.list(path.parent)){
-            if(!Files.isRegularFile(child))
+        val children = file.parentFile?.listFiles() ?: arrayOf<File>()
+        for(child in children){
+            if(!child.isFile)
                 continue
-            val cname = child.fileName!!.toString()
+            val cname = child.name
             if(!cname.startsWith(name))
                 continue
             if(!cname.endsWith(COMMIT_MARKER_SUFFIX))
@@ -412,10 +409,10 @@ class StoreTrivialTx(val file:File, isThreadSafe:Boolean=true, val deleteFilesAf
     protected fun loadFrom(number:Long){
         if(CC.ASSERT)
             Utils.assertWriteLock(lock)
-        val readFrom = Utils.pathChangeSuffix(path, "."+number + DATA_SUFFIX)
+        val readFrom = Utils.pathChangeSuffix(file, "."+number + DATA_SUFFIX)
 
-        Utils.logDebug { "Loading from ${readFrom} with length ${readFrom.toFile().length()}" }
-        Files.newInputStream(readFrom, StandardOpenOption.READ).buffered().use {
+        Utils.logDebug { "Loading from ${readFrom} with length ${readFrom.length()}" }
+        FileInputStream(readFrom).buffered().use {
             loadFromInternal(it)
         }
     }
@@ -426,20 +423,23 @@ class StoreTrivialTx(val file:File, isThreadSafe:Boolean=true, val deleteFilesAf
             val next = prev + 1;
 
             //save to file
-            val saveTo = Utils.pathChangeSuffix(path, "." + next + DATA_SUFFIX)
+            val saveTo = Utils.pathChangeSuffix(file, "." + next + DATA_SUFFIX)
             //TODO provide File.newOutput... method protected by C marker
             //TODO write using output stream should call FD.sync() at end
-            Files.newOutputStream(saveTo, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE).buffered().use {
+            FileOutputStream(saveTo).buffered().use {
                 saveTo(it)
             }
             //create commit marker
-            Files.createFile(Utils.pathChangeSuffix(path, "." + next + COMMIT_MARKER_SUFFIX))
+            val marker = Utils.pathChangeSuffix(file, "." + next + COMMIT_MARKER_SUFFIX)
+            if (!marker.createNewFile()) {
+                throw IOException("File already exists: " + marker)
+            }
             lastFileNum = next
             //delete old data
-            Files.deleteIfExists(Utils.pathChangeSuffix(path, "." + prev + COMMIT_MARKER_SUFFIX))
-            Files.deleteIfExists(Utils.pathChangeSuffix(path, "." + prev + DATA_SUFFIX))
+            Utils.pathChangeSuffix(file, "." + prev + COMMIT_MARKER_SUFFIX).delete()
+            Utils.pathChangeSuffix(file, "." + prev + DATA_SUFFIX).delete()
 
-            Utils.logDebug { "Committed into ${saveTo} with length ${saveTo.toFile().length()}" }
+            Utils.logDebug { "Committed into ${saveTo} with length ${saveTo.length()}" }
         }
     }
 

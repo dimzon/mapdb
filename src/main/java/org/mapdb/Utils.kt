@@ -1,7 +1,6 @@
 package org.mapdb
 
 import java.io.File
-import java.nio.file.Path
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.*
@@ -66,11 +65,10 @@ internal object Utils {
     val LOG = Logger.getLogger("org.mapdb");
 
     /**
-     * Return Path in the same parent folder, but with different suffix.
+     * Return File in the same parent folder, but with different suffix.
      */
-    fun pathChangeSuffix(path: Path, suffix: String): Path {
-        //TODO this might not work with alternative filesystems
-        return File(path.toFile().path + suffix).toPath();
+    fun pathChangeSuffix(path: File, suffix: String): File {
+        return File(path.path + suffix)
     }
 
 

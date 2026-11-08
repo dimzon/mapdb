@@ -492,14 +492,14 @@ public abstract class Volume implements Closeable{
                     return lock;
             } catch (OverlappingFileLockException e) {
                 if (fileLockWait <= 0) {
-                    throw new DBException.FileLocked(file.toPath(), e);
+                    throw new DBException.FileLocked(file, e);
                 }
             } catch (IOException e) {
                 throw new DBException.VolumeIOError(e);
             }
 
             if (fileLockWait <= 0) {
-                throw new DBException.FileLocked(file.toPath(), null);
+                throw new DBException.FileLocked(file, null);
             }
 
             // wait until file becomes unlocked

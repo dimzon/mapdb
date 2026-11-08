@@ -1,7 +1,7 @@
 package org.mapdb
 
+import java.io.File
 import java.io.IOException
-import java.nio.file.Path
 
 /**
  * Exception hierarchy for MapDB
@@ -36,7 +36,7 @@ open class DBException(message: String?, cause: Throwable?) : RuntimeException(m
 
     class PointerChecksumBroken():DataCorruption("Broken bit parity")
 
-    class FileLocked(path: Path, exception: Exception?):
+    class FileLocked(path: File, exception: Exception?):
             DBException("File is already opened and is locked: "+path, exception)
 
 

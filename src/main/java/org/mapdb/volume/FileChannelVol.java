@@ -10,15 +10,12 @@ import org.mapdb.DataInput2;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.OpenOption;
-import java.nio.file.StandardOpenOption;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -61,19 +58,13 @@ public final class FileChannelVol extends Volume {
         this.file = file;
         this.readOnly = readOnly;
         this.sliceSize = 1<<sliceShift;
-        Set<OpenOption> options = new HashSet();
-        options.add(StandardOpenOption.READ);
-        if(!readOnly){
-            options.add(StandardOpenOption.WRITE);
-            options.add(StandardOpenOption.CREATE);
-        }
         try {
             checkFolder(file, readOnly);
             if (readOnly && !file.exists()) {
                 channel = null;
                 size = 0;
             } else {
-                channel = FileChannel.open(file.toPath(), options);
+                channel = new RandomAccessFile(file, readOnly ? "r" : "rw").getChannel();
 
                 size = channel.size();
             }
