@@ -1,6 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
 import org.mapdb.DataIO.*
 import org.mapdb.StoreDirectJava.*
 import org.mapdb.volume.Volume
@@ -169,7 +168,7 @@ class StoreDirect(
                 if(indexPages.isEmpty)
                     ZERO_PAGE_LINK
                 else
-                    indexPages[indexPages.size()-1] + 8
+                    indexPages[indexPages.size-1] + 8
 
         if(CC.ASSERT && parity16Get(volume.getLong(pagePointerOffset))!=0L)
             throw DBException.DataCorruption("index pointer not empty")
@@ -757,10 +756,10 @@ class StoreDirect(
                     val store2 = StoreDirect.make(isThreadSafe = false, concShift = 0)
 
                     //first allocate enough index pages, so they are at beginning of store
-                    for (i in 0 until indexPages.size())
+                    for (i in 0 until indexPages.size)
                         store2.allocateNewIndexPage()
 
-                    if (CC.ASSERT && store2.indexPages.size() != indexPages.size())
+                    if (CC.ASSERT && store2.indexPages.size != indexPages.size)
                         throw AssertionError();
 
                     //now iterate over all recids

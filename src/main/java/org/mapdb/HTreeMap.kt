@@ -1,8 +1,6 @@
 package org.mapdb
 
 import com.google.common.collect.Iterators
-import org.eclipse.collections.api.map.primitive.MutableLongLongMap
-import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet
 import java.io.Closeable
 import java.security.SecureRandom
 
@@ -498,7 +496,7 @@ class HTreeMap<K,V>(
                 //remove from leaf and from store
                 if (leaf.size == 3) {
                     //single entry, collapse leaf
-                    indexTree.removeKey(index)
+                    indexTree.remove(index)
                     store.delete(leafRecid, leafSerializer)
                 } else {
                     //more entries, update leaf

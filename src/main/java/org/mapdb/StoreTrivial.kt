@@ -1,9 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.api.LongIterable
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap
-import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet
-import org.eclipse.collections.impl.stack.mutable.primitive.LongArrayStack
 import java.io.*
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -78,7 +74,7 @@ open class StoreTrivial(
         }
         maxRecid = maxRecid2
 
-        Utils.logDebug { "Loaded ${records.size()} objects" }
+        Utils.logDebug { "Loaded ${records.size} objects" }
     }
 
     protected fun fileHeaderCheck(header:Long){
@@ -106,7 +102,7 @@ open class StoreTrivial(
             //ByteArray has no equal method, must compare one by one
             while (recidIter.hasNext()) {
                 val recid = recidIter.next();
-                val bytes = records.get(recid)
+                val bytes = records.get(recid)!!
                 DataIO.packLong(outStream, recid)
                 val sizeToWrite: Long =
                         if (bytes === NULL_RECORD) {
@@ -123,7 +119,7 @@ open class StoreTrivial(
             //zero recid marks end
             DataIO.packLong(outStream, 0L)
 
-            Utils.logDebug { "Saved ${records.size()} records" }
+            Utils.logDebug { "Saved ${records.size} records" }
         }
     }
 
@@ -276,7 +272,7 @@ open class StoreTrivial(
             return true;
 
         Utils.lockRead(lock) {
-            if (records.size() != other.records.size())
+            if (records.size != other.records.size)
                 return false;
 
 

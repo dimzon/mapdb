@@ -858,7 +858,7 @@ class DBTest{
         val db = DBMaker.memoryDB().make()
         val map = db.indexTreeLongLongMap("map").make();
         map.put(1L, 2L);
-        assertEquals(1, map.size())
+        assertEquals(1, map.size)
     }
 
 
@@ -877,7 +877,7 @@ class DBTest{
 
         for(i in 1L .. 1000L)
             assertEquals(i*2, map.get(i))
-        assertEquals(1000, map.size())
+        assertEquals(1000, map.size)
 
         val catalog = db.nameCatalogLoad()
         assertEquals(5, catalog.size)

@@ -77,27 +77,27 @@ class StoreWALTest: StoreDirectAbstractTest() {
             val store = openStore()
             store.commit()
             val recid = store.put(ByteArray(size), Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 < store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 < store.cacheRecords.map { it.size }.sum())
             store.update(recid, null, Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 == store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 == store.cacheRecords.map { it.size }.sum())
         }
 
         for(size in sizes) {
             val store = openStore()
             store.commit()
             val recid = store.put(ByteArray(size), Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 < store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 < store.cacheRecords.map { it.size }.sum())
             store.update(recid, ByteArray(1), Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 == store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 == store.cacheRecords.map { it.size }.sum())
         }
 
         for(size in sizes) {
             val store = openStore();
             store.commit()
             val recid = store.put(ByteArray(size), Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 < store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 < store.cacheRecords.map { it.size }.sum())
             store.delete(recid, Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 == store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 == store.cacheRecords.map { it.size }.sum())
         }
 
         for(size in sizes) {
@@ -105,9 +105,9 @@ class StoreWALTest: StoreDirectAbstractTest() {
             store.commit()
             val v = ByteArray(size)
             val recid = store.put(v, Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 < store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 < store.cacheRecords.map { it.size }.sum())
             store.compareAndSwap(recid, v, null, Serializer.BYTE_ARRAY_NOSIZE)
-            assertTrue(0 == store.cacheRecords.map { it.size() }.sum())
+            assertTrue(0 == store.cacheRecords.map { it.size }.sum())
         }
 
     }

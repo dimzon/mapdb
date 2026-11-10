@@ -2,8 +2,6 @@ package org.mapdb
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import org.eclipse.collections.api.map.primitive.MutableLongLongMap
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
 import org.mapdb.elsa.*
 import org.mapdb.elsa.ElsaSerializerPojo.ClassInfo
 import org.mapdb.serializer.GroupSerializer

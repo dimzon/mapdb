@@ -1,9 +1,5 @@
 package org.mapdb.StoreAccess
 
-import org.eclipse.collections.api.list.primitive.MutableLongList
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
-import org.eclipse.collections.impl.map.mutable.primitive.LongLongHashMap
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap
 import org.fest.reflect.core.Reflection
 import org.mapdb.*
 import org.mapdb.volume.SingleByteArrayVol

@@ -1,7 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.api.list.primitive.MutableLongList
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
 import org.mapdb.DataIO.parity1Get
 import org.mapdb.DataIO.parity1Set
 import org.mapdb.StoreDirectJava.RECID_LONG_STACK

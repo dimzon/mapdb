@@ -1,8 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
-import org.eclipse.collections.impl.map.mutable.primitive.LongLongHashMap
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap
 import org.mapdb.volume.ReadOnlyVolume
 import org.mapdb.volume.SingleByteArrayVol
 import org.mapdb.volume.Volume
@@ -676,7 +673,7 @@ class StoreWAL(
                 if(indexPages.isEmpty)
                     ZERO_PAGE_LINK
                 else
-                    indexPages[indexPages.size()-1] + 8
+                    indexPages[indexPages.size-1] + 8
 
 //        if(CC.ASSERT && parity16Get(volume.getLong(pagePointerOffset))!=0L)
 //            throw DBException.DataCorruption("index pointer not empty")

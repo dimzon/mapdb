@@ -1,9 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.api.list.primitive.MutableLongList
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
-import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet
-import org.eclipse.collections.impl.stack.mutable.primitive.LongArrayStack
 import org.mapdb.BTreeMapJava.*
 import org.mapdb.serializer.GroupSerializer
 import java.io.Closeable

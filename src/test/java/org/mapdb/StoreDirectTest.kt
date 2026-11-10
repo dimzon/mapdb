@@ -1,9 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.api.list.primitive.MutableLongList
-import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap
-import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet
 import org.fest.reflect.core.Reflection
 import org.junit.Test
 import org.junit.Assert.*
@@ -443,7 +439,7 @@ abstract class StoreDirectAbstractTest:StoreReopenTest() {
         store.compact()
         store.verify()
 
-        assertEquals(ref.size()+1, store.getAllRecids().asSequence().count())
+        assertEquals(ref.size+1, store.getAllRecids().asSequence().count())
         store.getAllRecids().asSequence().forEach { recid->
             assertTrue(ref.containsKey(recid)|| recid==nullRecid)
         }

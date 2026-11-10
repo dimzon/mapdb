@@ -1,6 +1,5 @@
 package org.mapdb
 
-import org.eclipse.collections.api.list.primitive.MutableLongList
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet
 import org.fest.reflect.core.Reflection
 import org.junit.Assert.*
