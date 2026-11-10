@@ -1,5 +1,6 @@
 package org.mapdb.serializer;
 
+import org.mapdb.ClassLoaders;
 import org.mapdb.DBException;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
@@ -19,7 +20,7 @@ public class SerializerClass extends GroupSerializerObjectArray<Class<?>> {
     }
 
     public SerializerClass(){
-        this(Thread.currentThread().getContextClassLoader());
+        this(ClassLoaders.defaultClassLoader());
     }
 
     @Override

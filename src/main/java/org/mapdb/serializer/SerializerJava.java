@@ -1,6 +1,7 @@
 package org.mapdb.serializer;
 
 import org.mapdb.CC;
+import org.mapdb.ClassLoaders;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 
@@ -23,7 +24,7 @@ public class SerializerJava extends GroupSerializerObjectArray {
     }
 
     public SerializerJava(){
-        this(Thread.currentThread().getContextClassLoader());
+        this(ClassLoaders.defaultClassLoader());
     }
 
     /**
